@@ -7,12 +7,13 @@ from telebot import types
 from SQLighter import SQLighter
 
 bot = telebot.TeleBot(config.TOKEN)
+
 @bot.message_handler(commands=['start'])
 def welcome(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item = types.KeyboardButton('Начать игру')
-    markup.add(item)
-    bot.send_message(message.chat.id, 'Добро пожаловать!\nНажми <b>Начать игру</b> и попробуй угадать мелодию!', parse_mode='html', reply_markup=markup)
+    # вызов главного меню
+    markup = utils.menu()
+    bot.send_message(message.chat.id, 'Добро пожаловать!\nНажмите <b>Начать игру</b> и попробуйте угадать мелодию!', parse_mode='html', reply_markup=markup)
+
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def check_answer(message):
     # Если функция возвращает None -> Человек не в игре
@@ -32,18 +33,27 @@ def check_answer(message):
             utils.set_user_game(message.chat.id, row[2])
             # Отсоединяемся от БД
             db_worker.close()
+        elif message.text == 'Cтатистика':
+            Res = utils.return_res(message.chat.id)
+            bot.send_message(message.chat.id, 'Ваш cчет: ' + str(Res))
         else:
             bot.send_message(message.chat.id, 'Чтобы начать игру, напишите команду /game')
+            
+
     else:
-        # Уберём клавиатуру с вариантами ответа.
-        keyboard_hider = telebot.types.ReplyKeyboardRemove()
+        # Уберём клавиатуру с вариантами ответа, и вернём предыдущую.
+        markup = utils.menu()
         # Если ответ правильный/неправильный
         if message.text == answer:
-            bot.send_message(message.chat.id, 'Верно', reply_markup=keyboard_hider)
+            bot.send_message(message.chat.id, 'Верно', reply_markup=markup)
+            res = True
         else:
-            bot.send_message(message.chat.id, 'Не верно. Попробуйте еще раз!', reply_markup=keyboard_hider)
+            bot.send_message(message.chat.id, 'Не верно. Попробуйте еще раз!', reply_markup=markup)
+            res = False
+        utils.remove_res(message.chat.id, res)
         # Удаляем юзера из хранилища (игра закончена)
         utils.finish_user_game(message.chat.id)
+
 if __name__ == '__main__':
     random.seed()
     bot.infinity_polling()

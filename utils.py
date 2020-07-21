@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import shelve
-from config import shelve_name, database_name
+import telebot
 from SQLighter import SQLighter 
 from random import shuffle
-import telebot
+from telebot import types
+from config import shelve_name, database_name, stats_name
+
 
 def count_rows():
     """
@@ -13,7 +15,6 @@ def count_rows():
     db = SQLighter(database_name)
     rowsnum = db.count_rows
     with shelve.open(shelve_name) as storage:
-        print(rowsnum)
         storage['rows_count'] = rowsnum
 
 def get_rows_count():
@@ -74,7 +75,43 @@ def generate_markup(right_answer, wrong_answers):
     # Перемашаем элементы
     shuffle(list_items)
     # Заполняем разметку перемешанными элементами
-    #return markup.add(list_items[0],list_items[1],list_items[2],list_items[3])
     for item in list_items:
         markup.add(item)
     return markup
+def remove_res(chat_id, res):
+    """ 
+    изменение статистики пользователя с учётом его ответа
+    """
+    # открываем хранилище 
+    with shelve.open(stats_name) as storage:
+        chat_id = str(chat_id)
+        if res:
+            if chat_id in storage:
+                storage[chat_id] = str(int(storage[chat_id]) + 1)
+            else:
+                storage[chat_id] = '1'
+        else:
+            if chat_id in storage:
+                storage[chat_id] = str(int(storage[chat_id]) - 1)
+            else:
+                storage[chat_id] = '-1'
+        print(storage[chat_id])
+def menu():
+    """
+    Вызов главного меню
+    """
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    item1 = types.KeyboardButton('Начать игру')
+    item2 = types.KeyboardButton('Cтатистика')
+    markup.add(item1, item2)
+    return markup
+def return_res(chat_id):
+    """
+    Запрос результатов пользователя
+    """
+    with shelve.open(stats_name) as storage:
+        chat_id = str(chat_id)
+        if chat_id in storage:
+            return storage[chat_id]
+        else:
+            return "0"

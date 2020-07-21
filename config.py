@@ -1,3 +1,4 @@
-TOKEN = '1078626900:AAG2Sz5ffmnI89F_xQE8PoM8li7QSLU8sQg'
+TOKEN = '1319919157:AAFxV71uLzJ0Svd8OtRwPZxzblJyf1NwIas'
 database_name = 'music.db'
 shelve_name = 'shelve.db'
+stats_name = 'stats.db'
